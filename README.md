@@ -170,224 +170,82 @@ A first meaningful benchmark should be small and end-to-end:
 
 ## Mathematical foundations
 
-This section records the mathematics used by the project. These formulas are foundational references; each implementation issue should specify which equations apply and how they are tested.
+The equations below summarize the mathematical tools used throughout QuantumShield. The poster provides a compact visual reference; the explanations underneath describe **why each concept matters** to the simulator, decoder, or benchmark.
+
+![QuantumShield mathematical foundations — black and white formula reference](<QuantumShield_%20Quantum%20Computing%20Foundations%20Poster.png>)
 
 ### 1. Qubit state and normalization
 
-A pure single-qubit state is
+A qubit is represented by two complex amplitudes, and normalization ensures that its measurement probabilities add up to one.
 
-[
-|\psi\rangle = \alpha |0\rangle + \beta |1\rangle,
-\qquad \alpha,\beta\in\mathbb{C}.
-]
-
-Normalization requires
-
-[
-\langle\psi|\psi\rangle = |\alpha|^2+|\beta|^2=1.
-]
-
-The computational-basis measurement probabilities are
-
-[
-P(0)=|\alpha|^2,\qquad P(1)=|\beta|^2.
-]
-
-For (N) independent measurements, expected counts are (E[N_0]=NP(0)) and (E[N_1]=NP(1)). These are probability statements, not deterministic shot-count guarantees.
+**Why it is used:** This is the basic mathematical representation of quantum information. It explains the possible measurement outcomes of a qubit and provides a foundation for understanding quantum states before introducing error correction.
 
 ### 2. Density matrices and mixed states
 
-For a pure state, the density operator is
+A density matrix represents a quantum state when it may be pure or a statistical mixture of possible states. Its trace is one, and measurement probabilities are obtained using the Born rule.
 
-[
-\rho=|\psi\rangle\langle\psi|,\qquad
-\operatorname{Tr}(\rho)=1.
-]
-
-A mixed state is a convex mixture
-
-[
-\rho=\sum_i p_i |\psi_i\rangle\langle\psi_i|,
-\quad p_i\ge 0,\quad \sum_i p_i=1.
-]
-
-Measurement probabilities for projectors (\Pi_m) are given by the Born rule:
-
-[
-P(m)=\operatorname{Tr}(\Pi_m\rho).
-]
+**Why it is used:** Quantum noise can turn an initially pure state into a mixed state. Density matrices provide the language for describing noisy quantum systems and the effect of quantum error channels.
 
 ### 3. Quantum gates
 
-A closed-system quantum gate is represented by a unitary matrix:
+Quantum gates are unitary transformations. The Pauli gates describe bit and phase changes, while the Hadamard gate creates or removes superposition.
 
-[
-U^\dagger U=UU^\dagger=I,
-\qquad |\psi'\rangle=U|\psi\rangle.
-]
-
-Common one-qubit gates include
-
-[
-X=\begin{bmatrix}0&1\\1&0\end{bmatrix},\quad
-Z=\begin{bmatrix}1&0\\0&-1\end{bmatrix},\quad
-H=\frac{1}{\sqrt 2}\begin{bmatrix}1&1\\1&-1\end{bmatrix}.
-]
-
-The Pauli (X) gate flips computational-basis states; (Z) changes the phase of (|1\rangle); (H) creates or removes superposition.
+**Why it is used:** Gates define how quantum circuits operate. QuantumShield relies on circuit-level operations to describe the computation, inject noise, and study how errors affect measured outcomes.
 
 ### 4. Multi-qubit states and tensor products
 
-For two qubits,
+The tensor product combines individual qubit state spaces into a joint multi-qubit state space. An (n)-qubit state has dimension (2^n).
 
-[
-|\psi\rangle=|\psi_1\rangle\otimes|\psi_2\rangle.
-]
-
-For (n) qubits, the state space has dimension (2^n). This exponential state-vector size is one reason to use stabilizer-specific simulation tools for QEC rather than building a dense state-vector simulator for the main research pipeline.
+**Why it is used:** Quantum error-correcting codes store logical information across multiple physical qubits. Tensor products describe these joint systems and explain why general-purpose state-vector simulation becomes expensive as the number of qubits grows.
 
 ### 5. Pauli errors and error channels
 
-A single-qubit depolarizing channel with error probability (p), under the convention used here, is
+Pauli errors model bit flips, phase flips, and combinations of these errors. A quantum channel describes how noise changes a state, with the parameter (p) controlling the error probability under the stated convention.
 
-[
-\mathcal{D}_p(\rho)=
-(1-p)\rho+\frac{p}{3}
-(X\rho X+Y\rho Y+Z\rho Z).
-]
-
-This convention means total non-identity Pauli probability is (p), split equally among (X,Y,Z). Other libraries or circuit instructions may parameterize depolarization differently; the implementation must document and test the exact convention.
-
-A bit-flip channel is
-
-[
-\mathcal{E}_p(\rho)=(1-p)\rho+pX\rho X.
-]
+**Why it is used:** Noise is the central condition that a QEC decoder must handle. QuantumShield uses explicit noise models to generate experiments and to test whether a decoder still works when the noise conditions change.
 
 ### 6. Stabilizer codes and syndrome
 
-For stabilizer generators (S_1,\ldots,S_r), valid code states satisfy
+Stabilizer generators define the code space. A syndrome records whether an error commutes or anticommutes with each stabilizer measurement.
 
-[
-S_i|\psi_L\rangle=|\psi_L\rangle.
-]
-
-A Pauli error (E) is detected by whether it commutes or anticommutes with each generator:
-
-[
-S_iE=(-1)^{s_i}ES_i,
-\qquad s_i\in\{0,1\}.
-]
-
-The binary vector
-
-[
-\mathbf{s}=(s_1,s_2,\ldots,s_r)
-]
-
-is the idealized syndrome. In circuit-level QEC, detector events are often differences/parities of measurement outcomes over time; they should not be conflated with a single static stabilizer measurement.
+**Why it is used:** The syndrome is the information used by a decoder to infer an appropriate recovery. It connects the simulated measurements to the decoding task. In circuit-level experiments, detector events may combine measurement outcomes across rounds, so their definition must be documented separately.
 
 ### 7. Binary symplectic representation
 
-An (n)-qubit Pauli operator (ignoring global phase) can be represented by binary vectors (\mathbf{x},\mathbf{z}\in\mathbb{F}_2^n). Two Paulis ((\mathbf{x},\mathbf{z})) and ((\mathbf{x}',\mathbf{z}')) commute exactly when
+An (n)-qubit Pauli operator can be represented using binary (X)- and (Z)-component vectors. The symplectic condition determines whether two Pauli operators commute.
 
-[
-\mathbf{x}\cdot\mathbf{z}'
-+\mathbf{z}\cdot\mathbf{x}'=0\pmod 2.
-]
-
-This representation supports stabilizer algebra and code validation.
+**Why it is used:** This representation makes stabilizer calculations easier to store, validate, and compute. It can support code checks and algebraic tests without manipulating large quantum-state vectors.
 
 ### 8. Repetition-code example
 
-For the three-qubit bit-flip repetition code,
+The three-qubit bit-flip repetition code encodes logical zero and one into three physical qubits. Majority voting corrects one bit flip, and the displayed logical-failure expression gives the idealized failure probability for independent bit-flip noise.
 
-[
-|0_L\rangle=|000\rangle,\qquad
-|1_L\rangle=|111\rangle,
-\]
-
-with stabilizer generators (Z_1Z_2) and (Z_2Z_3). A single bit flip produces a syndrome that identifies which qubit disagrees with its neighbors. This pedagogical code protects against one bit flip, not arbitrary X and Z errors simultaneously.
-
-For independent bit-flip probability (p), majority voting fails when two or three bits flip:
-
-[
-P_L=\binom{3}{2}p^2(1-p)+p^3
-=3p^2-2p^3.
-]
-
-This expression is a useful unit-test target for an idealized three-bit repetition-code model.
+**Why it is used:** This small code is an understandable starting point for implementing and testing the complete QEC workflow. Its analytical failure probability is also a useful reference for checking simulator and decoder results. It protects against bit flips, not arbitrary bit and phase errors simultaneously.
 
 ### 9. Decoding and logical failure
 
-A decoder maps observed syndrome/detector information (\mathbf{s}) to a recovery or correction decision (\hat{\mathbf{e}}):
+A decoder maps a syndrome or detector-event record to a recovery decision. The estimated logical failure rate is the number of failed shots divided by the total number of shots.
 
-[
-D:\mathbf{s}\mapsto\hat{\mathbf{e}}.
-]
+**Why it is used:** This defines the main outcome QuantumShield measures. A recovery should be judged by whether it corrects the logical information, not simply by whether it reproduces the exact physical error pattern. For rare failures, confidence intervals should be reported rather than interpreting zero observed failures as a true zero rate.
 
-The research outcome is not necessarily whether the predicted physical error exactly matches the sampled physical error. The key QEC metric is whether the combined actual error and recovery produce a logical failure. For (N) independent shots and (k) logical failures,
+### 10. Random Forest (AI decoder)
 
-[
-\widehat p_L=\frac{k}{N}.
-]
+A Random Forest combines predictions from multiple decision trees. The poster also shows the class-vote probability and Gini impurity used when growing classification trees.
 
-A simple approximate standard error is
-
-[
-\operatorname{SE}(\widehat p_L)
-=\sqrt{\frac{\widehat p_L(1-\widehat p_L)}{N}}.
-]
-
-For low failure rates or zero observed failures, report a suitable binomial confidence interval (rather than claiming the true rate is zero).
-
-### 10. Random Forest
-
-A Random Forest contains (B) decision trees trained with bootstrap samples and feature subsampling. For classification, the hard-vote prediction is
-
-[
-\hat y=\operatorname{mode}
-\{T_1(\mathbf{x}),T_2(\mathbf{x}),\ldots,T_B(\mathbf{x})\}.
-]
-
-The estimated class probability can be represented as the fraction of trees voting for class (c):
-
-[
-\hat P(y=c\mid\mathbf{x})
-=\frac{1}{B}\sum_{b=1}^{B}
-\mathbb{1}[T_b(\mathbf{x})=c].
-]
-
-The Gini impurity of a node with class proportions (p_1,\ldots,p_K) is
-
-[
-G=1-\sum_{k=1}^{K}p_k^2.
-]
-
-A split's impurity reduction is the parent impurity minus the weighted child impurities. Tree depth, number of trees, minimum leaf size, feature selection, class balance, and random seed must be recorded.
+**Why it is used:** Random Forest is QuantumShield's first machine-learning decoder candidate. It provides a CPU-friendly baseline for testing whether a model can learn useful relationships between syndrome features and recovery or logical-frame decisions. Training labels must account for stabilizer degeneracy and must not simply assume that every physical error has one unique correct label.
 
 ### 11. Generalization gap and distribution shift
 
-Let (M_{\mathrm{train-dist}}) denote a metric on held-out samples drawn from the training distribution and (M_{\mathrm{shift}}) the same metric on a declared shifted distribution. For a metric where larger is better,
+The generalization gap compares a decoder's performance on held-out data from the training distribution with its performance on a declared shifted distribution. The sign convention depends on whether the metric is one where larger or smaller values are better.
 
-[
-\Delta_{\mathrm{gen}}=
-M_{\mathrm{train-dist}}-M_{\mathrm{shift}}.
-]
-
-For error rates where smaller is better, define the gap with the opposite sign or explicitly report both rates to avoid ambiguity. The benchmark must specify the shift (for example, train at (p=p_0), test at (p=p_1)) and keep test data out of model selection.
+**Why it is used:** This is the core research question of QuantumShield. It measures how much decoder performance changes when test noise differs from training noise, such as training at one physical error probability and evaluating at another. The shifted test set must not be used for model selection.
 
 ### 12. Benchmark aggregation
 
-Across (R) independent seeds, a metric (m_r) can be summarized by
+The mean and sample standard deviation summarize a metric across repeated independent random seeds. Sample counts and confidence intervals provide additional information about uncertainty.
 
-[
-\bar m=\frac{1}{R}\sum_{r=1}^{R}m_r,
-\qquad
-s_m=\sqrt{\frac{1}{R-1}\sum_{r=1}^{R}(m_r-\bar m)^2}.
-]
+**Why it is used:** A result from one random seed may be misleading. Repeated runs help quantify variability and make comparisons between Random Forest and conventional decoders more reliable and reproducible. Decoders should be compared on equivalent test instances wherever possible.
 
-Report sample counts and confidence intervals, not only a mean. Compare decoders on the same generated test instances wherever possible.
 
 ## Decoder strategy
 
