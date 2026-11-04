@@ -172,7 +172,7 @@ A first meaningful benchmark should be small and end-to-end:
 
 The equations below summarize the mathematical tools used throughout QuantumShield. The poster provides a compact visual reference; the explanations underneath describe **why each concept matters** to the simulator, decoder, or benchmark.
 
-![QuantumShield mathematical foundations — black and white formula reference](<QuantumShield_%20Quantum%20Computing%20Foundations%20Poster.png>)
+![QuantumShield mathematical foundations — black and white formula reference](docs/assets/quantumshield-mathematical-foundations.png)
 
 ### 1. Qubit state and normalization
 
