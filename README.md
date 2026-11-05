@@ -27,6 +27,30 @@ QuantumShield is a research-oriented software project intended to make quantum e
 - [Contributing](#contributing)
 - [License](#license)
 
+## Package installation
+
+The repository includes an installable Python package using the `src/` layout.
+Python 3.10–3.13 are declared in package metadata. The initial runtime package
+has no third-party dependencies; development tools are optional.
+
+```bash
+python -m venv .venv
+# Windows PowerShell: .\.venv\Scripts\Activate.ps1
+# Linux/macOS: source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+python -m pip check
+python -c "import quantumshield; print(quantumshield.__version__)"
+python -m pytest
+```
+
+See [Installation](docs/installation.md) for complete Windows and Linux
+instructions.
+
+The current public Python API exposes `quantumshield.__version__`. A CLI
+entry point will be added when real CLI functionality is implemented; no
+placeholder command is installed.
+
 ## Research goal
 
 Quantum error correction protects logical quantum information by encoding it across multiple physical qubits and extracting error syndromes. A decoder uses the observed syndrome information to choose a recovery operation or infer a logical-frame update.
@@ -458,7 +482,7 @@ For a two-person team:
 
 ## Local development
 
-The exact installation steps will be added once the initial package metadata and supported Python version are committed. The intended workflow is:
+See [docs/installation.md](docs/installation.md) for complete, platform-specific package installation steps.
 
 ```bash
 git clone https://github.com/nischalk987/QuantumShield.git
